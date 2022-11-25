@@ -1,0 +1,327 @@
+#include <iostream>
+#include <algorithm>
+#include <fstream>
+#include <cmath>
+using namespace std;
+
+#define Pi 3.1415
+#define ld long double
+#define G 6.67e-11
+#define exp 2.718281828459045
+#define imp 3381
+
+void Input(ld & CentralMass, ld & aStart, ld & eStart, ld &iStart, ld & LoanStart, ld & AopStart, ld & ObjectRadius, ld & dT, ld & SpinTime, ld & NIgnition, ld & EngineForce, ld & Isp, ld & Longitude, ld & Altitude) {
+    ifstream input("input.txt");
+
+    input
+            >> dT
+            >> ObjectRadius
+            >> SpinTime
+            >> CentralMass
+            >> eStart
+            >> iStart
+            >> aStart
+            >> LoanStart
+            >> AopStart
+            >> NIgnition
+            >> EngineForce
+            >> Isp
+            >> Longitude
+            >> Altitude;
+
+    input.close();
+}
+
+
+void Output(ld & dV, ld & dV1, ld & dV2, ld & a, ld & e, ld & T, ld & x, ld & y, ld & HTO, ld & FT) {
+    ofstream output("output.txt");
+    output
+            << "dV : " << dV << '\n'
+            << "dV1 : " << dV1 << '\n'
+            << "dV2 : " << dV2 << '\n'
+            << "a : " << a << '\n'
+            << "e : " << e << '\n'
+            << "T : " << T << '\n'
+            << "x : " << x << '\n'
+            << "y : " << y << '\n'
+            << "HTO : " << HTO << '\n'
+            << "Ft : " << FT << '\n';
+    output.close();
+}
+
+ld FirstSpaceSpeed(ld a, ld GravityParameter){ return sqrt(GravityParameter/a); }
+
+inline ld Square(ld  a){ return  a * a; }
+
+inline ld Cube(ld a){ return a * a * a; }
+
+ld TimeIntercept(ld a, ld e, ld x, ld y, ld GravityParameter) {
+    ld fi = Pi + atan(abs(x) / abs(y));
+    ld E = 2 * atan( tan(fi * 0.5) * sqrt( (1-e) / (1 + e)));
+    ld t = (E - e * sin(E) ) * sqrt(Square(a) * a / GravityParameter );
+
+    return (-t);
+}
+
+
+ld Large(ld x1, ld y1, ld x2, ld y2) {
+    return sqrt(Square(x1 - x2) + Square(y1 - y2) );
+}
+
+ld AccelerationOfGravity(ld M, ld r) {
+    return G * ( M / Square(r));
+}
+
+class Maneuver {
+public:
+    Maneuver(): startV(0),finishV(0)
+    {}
+
+    ld dV() {
+        return finishV - startV;
+    }
+
+    ld startV;
+    ld finishV;
+
+};
+
+class Orbit {
+public:
+    explicit Orbit( ld i = 0, ld a = 0, ld e = 0, ld Loan = 0, ld Aop = 0):
+            Inclination(i), MajorAxis(a), Eccentricity(e), Loan(Loan), Aop(Aop)
+    {}
+
+    ld Inclination;
+    ld MajorAxis;
+    ld Eccentricity;
+    ld Loan;
+    ld Aop;
+
+};
+
+class SpaceObject {
+public:
+    explicit SpaceObject(ld Mass = 0, ld Radius = 0):
+            Mass(Mass), Radius(Radius)
+    {}
+
+    ld GravityParameter() const{
+        return Mass * G;
+    }
+
+    ld Mass;
+    ld Radius;
+};
+
+class Point {
+public:
+    explicit Point(ld x = 0 , ld y = 0):x(x) , y(y)
+    {}
+
+    ld x;
+    ld y;
+};
+
+
+//--------------------------------------------------------------------------------------------------
+
+
+int main() {
+
+    ld dTime;                                       // Time Characteristics
+
+    ld ObjectRadius, SpinTime, CentralMass;         // Central Object Characteristics
+
+    ld eStart, iStart, aStart, LoanStart, AopStart; // Start Orbit Characteristics
+
+    ld NIgnition, EngineForce, Isp;     // Engine Characteristics
+
+    ld Longitude, Altitude;                         // Space To Hit
+
+    Input( CentralMass, aStart, eStart, iStart, LoanStart, AopStart, ObjectRadius, dTime, SpinTime, NIgnition, EngineForce, Isp, Longitude, Altitude);
+
+    SpaceObject Moon(CentralMass, ObjectRadius);
+
+
+
+    Orbit Start(iStart, aStart, eStart, LoanStart, AopStart);
+
+    ld MassConsumption = EngineForce/(Isp * 9.8);
+
+
+    ld BestA, BestT, BestE, BestX, BestY, BestFT;
+
+    ld VyHTO;
+    
+
+
+    ld i = 0.5;
+
+
+
+        ld Mass = 13475;
+
+        ld A = aStart / (1 + i);
+
+        ld v1 = FirstSpaceSpeed(aStart, Moon.GravityParameter());
+        ld v2 = sqrt((Moon.GravityParameter() / A) * ((1 - i) / (1 + i)) );
+
+
+        ld lnx1  = (v1-v2) / imp;
+
+
+        ld StopTime1 = Mass * (pow(exp, lnx1) - 1) / (pow(exp, lnx1) * MassConsumption);
+
+        Mass-= StopTime1 * MassConsumption;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        ld Nx,Ny;
+        ld kV;
+        ld HTO;
+
+
+
+
+        for (int k = 0; k < 20000; k+=10) {
+
+
+
+            ld Vkm = sqrt(Moon.GravityParameter() * ( 2 / (Moon.Radius + k) - 1 / A ));
+
+
+            ld X = (Moon.Radius + k - A) / i;
+            ld Y = sqrt(Square(Moon.Radius + k) - Square(X + A * i));
+
+           /* ld X2 = (Moon.Radius + k + 10- A) / i;
+            ld Y2 = sqrt(Square(Moon.Radius + k + 10) - Square(X2 + A * i));*/
+
+
+
+
+
+            Point P1(A * i, 0);
+            Point P2(-A * i, 0);
+            Point P3(X, Y);
+           // Point P4(X2,Y2);
+
+           /* ld T100 = TimeIntercept(A, i, X2, Y2, Moon.GravityParameter());
+            ld T0 = TimeIntercept(A, i, X, Y, Moon.GravityParameter());
+
+            ld Vy = abs((Large(P2.x, P2.y, P4.x, P4.y) - Large(P2.x, P2.y, P3.x, P3.y)) / (T0 - T100));
+            ld Vx = sqrt(Square(Vkm) - Square(Vy));
+
+            cout << Vy << '\n';
+            */
+
+
+          ld FocusAngle = acos((Square(Large(P1.x, P1.y, P3.x, P3.y)) + Square(Large(P2.x, P2.y, P3.x, P3.y)) - Square(Large(P1.x, P1.y, P2.x, P2.y))) / (2 * Large(P2.x, P2.y, P3.x, P3.y) * Large(P1.x, P1.y, P3.x, P3.y)));
+            ld AngleFromSurface = ( Pi - FocusAngle) / 2;
+
+            ld Vx = abs(sin(AngleFromSurface) * Vkm);
+            ld Vy = abs(cos(AngleFromSurface) * Vkm);
+
+
+
+
+
+
+
+            ld V = Vkm;
+            ld Time = 0;
+            ld NowVy = Vy, NowVx = Vx;
+            ld h = k + Moon.Radius;
+
+
+
+
+
+
+
+
+
+
+            while (V > 0) {
+
+                Time += 0.5;
+
+                ld Ay = EngineForce / (Mass - MassConsumption * Time) * sin(atan(NowVy / NowVx)) - G * Moon.Mass / Square(h);
+                ld Ax = EngineForce / (Mass - MassConsumption * Time) * cos(atan(NowVy / NowVx));
+
+
+
+                NowVy -= Ay * 0.5;
+                NowVx -= Ax * 0.5;
+
+
+
+
+
+                ld A = sqrt(Square(Ay) + Square(Ax));
+
+
+                V -= A * 0.5;
+
+
+                h -= NowVy * 0.5;
+
+
+            }
+
+
+
+
+            if (h - Moon.Radius < 10 && h - Moon.Radius > - 10) {
+                Nx = X;
+                Ny = Y;
+                HTO = k;
+                VyHTO = Vy;
+                kV = Vkm;
+                break;
+            }
+
+
+
+
+
+    }
+
+
+
+
+
+    Maneuver FirstManeuver;
+    FirstManeuver.startV = FirstSpaceSpeed(aStart, Moon.GravityParameter());
+    FirstManeuver.finishV = sqrt((Moon.GravityParameter() / A) * ((1 - i) / (1 + i)));
+
+    Maneuver SecondManeuver;
+    SecondManeuver.startV = sqrt(Moon.GravityParameter() * ( (2 / Moon.Radius) - (1 / A) ));;
+    SecondManeuver.finishV = 0;
+
+    ld dV = FirstManeuver.dV() + SecondManeuver.dV();
+    ld dV1 = FirstManeuver.dV();
+    ld dV2 = SecondManeuver.dV();
+    
+
+
+    Output(dV, dV1, dV2, A, i, BestT, Nx, Ny, HTO , BestFT);
+
+
+
+}
