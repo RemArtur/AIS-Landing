@@ -1,0 +1,88 @@
+Clearscreen.
+
+
+
+
+SAS ON.
+Set sasmode to "retrograde".
+
+Print alt:radar.
+Set HtoBurn to 13780.
+
+
+Wait until altitude - ship:geoposition:terrainheight < HtoBurn.
+Print "throttling".
+
+Lock throttle to 1.
+
+Wait until Verticalspeed > 0.
+
+Lock throttle to 0.
+
+Print "landing".
+
+SAS off.
+
+Lock steering to up.
+
+Set Ver0H to altitude - ship:geoposition:terrainheight.
+
+
+
+
+
+Set g to (6.67e-11 * Body:Mass / (alt:radar + 210000) / (alt:radar + 210000)).
+
+Set t2 to  abs(verticalspeed) / (Ship:maxthrust/ship:mass -  g).
+
+Set h to abs(Verticalspeed)/2 * t2 + 10.
+
+
+
+Until altitude - ship:geoposition:terrainheight < h{
+
+
+Set g to (6.67e-11 * Body:Mass / (alt:radar + 210000) / (alt:radar + 210000)).
+
+Set t2 to  abs(verticalspeed) / (Ship:maxthrust/ship:mass -  g).
+
+Set h to (Ship:maxthrust/ship:mass -  g) * t2 * t2.
+
+Print h at (0,2).
+
+
+}
+
+Lock throttle to 1.
+
+Wait until verticalspeed > -5.
+
+Unlock steering.
+
+until altitude - ship:geoposition:terrainheight < 3{
+
+Set g to (6.67e-11 * Body:Mass / (alt:radar + 210000) / (alt:radar + 210000)).
+
+Set ThrottleIn2 to g/(Ship:maxthrust/Ship:mass) - 0.01.
+
+SAS on.
+
+Set Sasmode to "retrograde".
+
+Lock throttle to ThrottleIn2.
+
+
+}
+
+Lock throttle to 0.
+
+SAS OFF.
+
+Lock steering to up.
+
+
+Print "landed".
+
+
+Wait until false.
+
